@@ -2,9 +2,10 @@ package gosimpleclimenu
 
 import (
 	"fmt"
+	"log"
+
 	"github.com/buger/goterm"
 	"github.com/pkg/term"
-	"log"
 )
 
 // Raw input keycodes
@@ -21,33 +22,66 @@ var keys = map[byte]bool{
 }
 
 type Menu struct {
-	Prompt  	string
-	CursorPos 	int
-	MenuItems 	[]*MenuItem
+	Prompt    string
+	CursorPos int
+	MenuItems []*MenuItem
 }
 
 type MenuItem struct {
-	Text     string
-	ID       string
-	SubMenu  *Menu
+	Text    string
+	ID      string
+	SubMenu *Menu
 }
 
 func NewMenu(prompt string) *Menu {
 	return &Menu{
-		Prompt: prompt,
+		Prompt:    prompt,
 		MenuItems: make([]*MenuItem, 0),
 	}
 }
 
 // AddItem will add a new menu option to the menu list
-func (m *Menu) AddItem(option string, id string) *Menu {
+func (m *Menu) AddItem(option string, id string) {
+	if id == "" {
+		fmt.Println("ID must not be empty.")
+		return
+	}
 	menuItem := &MenuItem{
 		Text: option,
-		ID: id,
+		ID:   id,
 	}
 
 	m.MenuItems = append(m.MenuItems, menuItem)
-	return m
+}
+
+// func (m *Menu) AddSubmenuItem(option string, id string, submenu *Menu) {
+func (m *Menu) AddSubmenuItem(option string, id string, submenu *Menu) {
+	if id == "" {
+		fmt.Println("ID must not be empty.")
+		return
+	}
+	menuItem := &MenuItem{
+		Text:    option,
+		ID:      id,
+		SubMenu: submenu,
+	}
+
+	m.MenuItems = append(m.MenuItems, menuItem)
+}
+
+func (m *Menu) drawHeading() {
+	fmt.Printf("%s\n", goterm.Color(goterm.Bold(m.Prompt)+":", goterm.GREEN))
+}
+
+func (m *Menu) clearHeading() {
+	if len(m.MenuItems) > 1 {
+		fmt.Printf("\033[%dA", len(m.MenuItems)-1+1)
+		fmt.Printf("\033[2K")
+	}
+	// else if len(m.MenuItems) == 1 {
+	// 	fmt.Printf("\033[%dA", len(m.MenuItems)-1+1)
+	// 	fmt.Printf("\033[2K")
+	// }
 }
 
 // renderMenuItems prints the menu item list.
@@ -97,13 +131,19 @@ func (m *Menu) renderMenuItems(redraw bool) {
 
 // Display will display the current menu options and awaits user selection
 // It returns the users selected choice
-func (m *Menu) Display() string {
+func (m *Menu) Display() []string {
+
+	if len(m.MenuItems) == 0 {
+		fmt.Printf("No items added to menu. Add items.")
+		return nil
+	}
+
 	defer func() {
 		// Show cursor again.
 		fmt.Printf("\033[?25h")
 	}()
 
-	fmt.Printf("%s\n", goterm.Color(goterm.Bold(m.Prompt) + ":", goterm.CYAN))
+	m.drawHeading()
 
 	m.renderMenuItems(false)
 
@@ -112,12 +152,33 @@ func (m *Menu) Display() string {
 
 	for {
 		keyCode := getInput()
+
 		if keyCode == escape {
-			return ""
+			return []string{}
 		} else if keyCode == enter {
 			menuItem := m.MenuItems[m.CursorPos]
 			fmt.Println("\r")
-			return menuItem.ID
+			sm := menuItem.SubMenu
+			if sm != nil {
+
+				// clear menu so it can be overwritten by submenu
+				clearMenu(len(m.MenuItems))
+
+				// show submenu
+				elIdsSub := sm.Display()
+
+				// if no elements are in array ESC was pressed in submenu. clear submenu. rerender menu
+				if len(elIdsSub) == 0 {
+					fmt.Println()
+					clearMenu(len(sm.MenuItems))
+					m.drawHeading()
+					m.renderMenuItems(false)
+				} else {
+					return append([]string{menuItem.ID}, elIdsSub...)
+				}
+			} else {
+				return []string{menuItem.ID}
+			}
 		} else if keyCode == up || keyCode == vimUp {
 			m.CursorPos = (m.CursorPos + len(m.MenuItems) - 1) % len(m.MenuItems)
 			m.renderMenuItems(true)
@@ -155,11 +216,22 @@ func getInput() byte {
 	// See: https://en.wikipedia.org/wiki/ANSI_escape_code
 	if read == 3 {
 		if _, ok := keys[readBytes[2]]; ok {
+			// we are only interested in the third byte in case its three bytes
 			return readBytes[2]
 		}
 	} else {
+		// in any other case we only return the first byte
 		return readBytes[0]
 	}
-
 	return 0
+}
+
+// clears the menu from the cli (incl. heading)
+func clearMenu(itemCount int) {
+	// move cursor up n lines
+	fmt.Printf("\033[%dA", itemCount+1)
+	// move cursor to beginning of line
+	fmt.Printf("\033[1G")
+	// delte till end of screen
+	fmt.Printf("\033[0J")
 }
