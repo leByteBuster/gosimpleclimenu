@@ -1,4 +1,4 @@
-package gocliselect
+package gosimpleclimenu
 
 import (
 	"fmt"

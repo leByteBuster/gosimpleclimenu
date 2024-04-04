@@ -2,11 +2,11 @@ package main
 
 import (
 	"fmt"
-	"github.com/nexidian/gocliselect"
+	"github.com/leByteBuster/gosimpleclimenu"
 )
 
 func main() {
-	menu := gocliselect.NewMenu("Chose a colour")
+	menu := gosimpleclimenu.NewMenu("Choose a colour")
 
 	menu.AddItem("Red", "red")
 	menu.AddItem("Blue", "blue")
