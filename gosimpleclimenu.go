@@ -10,10 +10,13 @@ import (
 // Raw input keycodes
 var up byte = 65
 var down byte = 66
+var vimDown byte = 106
+var vimUp byte = 107
 var escape byte = 27
 var enter byte = 13
-var keys = map[byte]bool {
-	up: true,
+
+var keys = map[byte]bool{
+	up:   true,
 	down: true,
 }
 
@@ -115,10 +118,10 @@ func (m *Menu) Display() string {
 			menuItem := m.MenuItems[m.CursorPos]
 			fmt.Println("\r")
 			return menuItem.ID
-		} else if keyCode == up {
+		} else if keyCode == up || keyCode == vimUp {
 			m.CursorPos = (m.CursorPos + len(m.MenuItems) - 1) % len(m.MenuItems)
 			m.renderMenuItems(true)
-		} else if keyCode == down {
+		} else if keyCode == down || keyCode == vimDown {
 			m.CursorPos = (m.CursorPos + 1) % len(m.MenuItems)
 			m.renderMenuItems(true)
 		}
@@ -127,6 +130,10 @@ func (m *Menu) Display() string {
 
 // getInput will read raw input from the terminal
 // It returns the raw ASCII value inputted
+// NOTE:
+// the way getInput works does not differ between 'A' and '<esc>[A' as input. Both would return
+// an A as input which is treated as 'up'. Same accounts for '<esc>[C' and 'C' with 'down'.
+// Proposal: return the full code and compare it to the actual full ascii (escape) codes
 func getInput() byte {
 	t, _ := term.Open("/dev/tty")
 
