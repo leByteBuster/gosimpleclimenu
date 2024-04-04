@@ -1,3 +1,6 @@
+This is a fork of: https://github.com/Nexidian/gocliselect
+
+
 # Golang CLI Select
 Lightweight interactive CLI selection library 
 
@@ -6,7 +9,7 @@ Lightweight interactive CLI selection library
 
 ## Import the package
 ```go
-import "github.com/nexidian/gocliselect"
+import "github.com/leByteBuster/gosimpleclimenu"
 ```
 
 ## Usage
