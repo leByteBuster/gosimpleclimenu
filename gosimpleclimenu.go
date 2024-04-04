@@ -84,8 +84,8 @@ func (m *Menu) renderMenuItems(redraw bool) {
 		menuItemText := menuItem.Text
 		cursor := "  "
 		if index == m.CursorPos {
-			cursor = goterm.Color("> ", goterm.YELLOW)
-			menuItemText = goterm.Color(menuItemText, goterm.YELLOW)
+			cursor = goterm.Color("> ", goterm.GREEN)
+			menuItemText = goterm.Color(menuItemText, goterm.GREEN)
 		}
 
 		fmt.Printf("\r%s %s%s", cursor, menuItemText, newline)
