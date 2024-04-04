@@ -51,19 +51,33 @@ func (m *Menu) AddItem(option string, id string) *Menu {
 // Setting redraw to true will re-render the options list with updated current selection.
 func (m *Menu) renderMenuItems(redraw bool) {
 	if redraw {
-		// Move the cursor up n lines where n is the number of options, setting the new
-		// location to start printing from, effectively redrawing the option list
+		// Move the cursor up n lines (n is the number of menu options), setting the new
+		// location to start printing from, effectively redrawing the option list.
+		// This is necessary to redraw the menu at the same position instead of appending it
+		// beneath the existing one.
 		//
 		// This is done by sending a VT100 escape code to the terminal
 		// @see http://www.climagic.org/mirrors/VT100_Escape_Codes.html
-		fmt.Printf("\033[%dA", len(m.MenuItems) -1)
+		if len(m.MenuItems) > 1 {
+			fmt.Printf("\033[%dA", len(m.MenuItems)-1)
+		}
 	}
 
 	for index, menuItem := range m.MenuItems {
 		var newline = "\n"
-		if index == len(m.MenuItems) - 1 {
-			// Adding a new line on the last option will move the cursor position out of range
-			// For out redrawing
+		if index == len(m.MenuItems)-1 {
+			// Adding a new line on the lat option will move the cursor position out of range triggering redraw
+			// so we dont do it.
+
+			// TODO: this line was responsible for the bug if only one item to choose from exists. The menu was
+			// drawn into negative (same element was drawn on top) each time one of the navigation keys (up
+			// or down) were triggered
+			// the bug is removed by adding the condition 'if (len(m.MenuItems) - 1) > 1' within the 'redraw'
+			// block
+			// why ??
+			// somehow, if there is only a single element to choose from, and the up and down buttons are used to
+			// try to navigate the menu is drawn into negative. Don't know why. If the sinlge element is not drawn
+			// into the last ligne anymore this does not happen anymore. Thus we need the \n instead the "".
 			newline = ""
 		}
 
